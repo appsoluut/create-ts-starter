@@ -21,11 +21,11 @@ Visual Studio Code and code away to your hearths content.
 
 ## Building the project
 
-To build to project on your local machine, run `$ npm run build`. This
-will transpile the project and put the output in `bin/index.js`. This is also
-the command which will be run when the `npm create @appsoluut/ts-starter`
-command is invoked.
+To build to project on your local machine, run `$ npm install`, then run
+`$ npm run build`. This will transpile the project and put the output in
+`bin/index.js`. This is also the command which will be run when the
+`npm create @appsoluut/ts-starter` command is invoked.
 
 To test this locally run `$ npm link @appsoluut/ts-starter` after every build
-to link it to your local npm installation. Then you can run `$ npx @appsoluut/ts-starter`
-to view the results.
+to link it to your local npm installation. Then you can run
+`$ npx @appsoluut/ts-starter` to view the results.

@@ -1,0 +1,23 @@
+{
+  "name": "@appsoluut/create-ts-starter",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "bin": "bin/index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "Paul Hameteman <paul@hameteman.com>",
+  "license": "ISC",
+  "description": "Starter script for creating Typescript projects easily.",
+  "repository": "github:appsoluut/create-ts-starter",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0"
+  }
+}
