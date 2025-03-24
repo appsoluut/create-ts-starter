@@ -1,8 +1,10 @@
 {
   "name": "@appsoluut/create-ts-starter",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "main": "src/index.ts",
-  "bin": "bin/index.js",
+  "bin": {
+    "create-ts-starter": "bin/index.js"
+  },
   "scripts": {
     "build": "npx tsc",
     "test": "jest"

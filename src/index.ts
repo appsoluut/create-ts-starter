@@ -3,7 +3,7 @@
 import { intro, outro } from '@clack/prompts';
 
 function index() {
-    intro(`create-my-app`);
+    intro(`Set up Typescript project`);
 
     // do stuff
 
