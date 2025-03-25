@@ -1,6 +1,6 @@
 {
   "name": "@appsoluut/create-ts-starter",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "src/index.ts",
   "bin": {
     "create-ts-starter": "bin/index.js"
@@ -21,6 +21,7 @@
     "ts-jest": "^29.3.0"
   },
   "dependencies": {
-    "@clack/prompts": "^0.10.0"
+    "@clack/prompts": "^0.10.0",
+    "@types/node": "^22.13.13"
   }
 }
