@@ -6,6 +6,7 @@
     "create-ts-starter": "bin/index.js"
   },
   "scripts": {
+    "bin": "npx tsc && node bin/index.js",
     "build": "npx tsc",
     "test": "jest"
   },
