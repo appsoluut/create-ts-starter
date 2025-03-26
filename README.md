@@ -12,7 +12,7 @@ available.
 
 ## Running
 
-Simply run `$ npm create @appsoluut/ts-starter` in your console to get
+Simply run `$ npm create @appsoluut/ts-starter@latest` in your console to get
 an interactive shell asking you for your project name. Afterwards all
 files and folders will be generated.
 
@@ -24,7 +24,7 @@ Visual Studio Code and code away to your hearths content.
 To build to project on your local machine, run `$ npm install`, then run
 `$ npm run build`. This will transpile the project and put the output in
 `bin/index.js`. This is also the command which will be run when the
-`$ npm create @appsoluut/ts-starter` command is invoked.
+`$ npm create @appsoluut/ts-starter@latest` command is invoked.
 
 A shorthand is to just run `$ npm run bin` which will do both the transpilation
 and running of the script immediately.

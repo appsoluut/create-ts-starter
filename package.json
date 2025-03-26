@@ -1,6 +1,6 @@
 {
   "name": "@appsoluut/create-ts-starter",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "src/index.ts",
   "bin": {
     "create-ts-starter": "bin/index.js"

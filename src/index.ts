@@ -1,17 +1,15 @@
 #!/usr/bin/env node
 
 import { intro, text, tasks, outro, isCancel, cancel, log } from '@clack/prompts';
-import { execSync } from 'child_process';
+import { exec, execSync } from 'node:child_process';
 import { promises } from 'fs';
 
-const sum =
-`export function sum(a: number, b: number): number {
+const sum = `export function sum(a: number, b: number): number {
     return a + b;
 }
 `
 
-const sumTest =
-`import { sum } from '../src/index'
+const sumTest = `import { sum } from '../src/index'
 
 describe('sum', () => {
     it("sum of 1 + 2 should return 3", () => {
@@ -26,31 +24,47 @@ describe('sum', () => {
     })
 });`
 
-const gitignore =
-`node_modules/
+const gitignore = `node_modules/
 package-lock.json
 `
 
-const jestconfig =
-`module.exports = {
+const jestconfig =`module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
 };
 `
+
+const notes = `✅ DONE
+
+⚠️ TODO
+
+🚧 WIP
+
+🅿️ PARKED
+`
+
+const readme = `# README
+
+A story about your amazing kata excersize here.`
+
+const techdebt = ``
 
 function onCancel(message: string) {
     cancel(message);
     process.exit(0);
 }
 
-async function myExecSync(cmd: string) {
-    var output;
-    try {
-        output = execSync(cmd, { stdio: 'pipe' });
-    } catch(err) {
-        onCancel(err as string);
-    }
-    return output;
+function myExec(cmd: string): Promise<string> {
+    return new Promise((resolve) => {
+        myExecImpl(resolve, cmd)
+    });
+}
+
+function myExecImpl(callback: (output: string) => void, cmd: string) {
+    exec(cmd, (error, stdout, stderr) => {
+        if (error) throw error;
+        callback(stdout || stderr);
+    })
 }
 
 async function stripComments(fileName: string) {
@@ -100,12 +114,11 @@ async function main() {
             title: 'Setting up npm package',
             task: async (message) => {
                 // Do installation here
-                myExecSync(`npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest ts-jest @types/jest`).then(() => {
-                    updateValues('./package.json', new Map<string, any>([
-                        ['name', projectName],
-                        ['scripts', {test: "jest"}]
-                    ]));
-                });
+                await myExec(`npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest ts-jest @types/jest`)
+                updateValues('./package.json', new Map<string, any>([
+                    ['name', projectName],
+                    ['scripts', {test: "jest"}]
+                ]));
                 return `Installed via npm`;
             },
         },
@@ -113,12 +126,11 @@ async function main() {
             title: 'Setting up typescript',
             task: async (message) => {
                 // Do installation here
-                myExecSync(`tsc --init`).then(() => {
-                    stripComments('./tsconfig.json').then(() => {
-                        updateValues('./tsconfig.json', new Map<string, any>([
-                            ['include', ["src/**/*", "tests/**/*"]],
-                        ]));
-                    });
+                await myExec(`tsc --init`);
+                stripComments('./tsconfig.json').then(() => {
+                    updateValues('./tsconfig.json', new Map<string, any>([
+                        ['include', ["src/**/*", "tests/**/*"]],
+                    ]));
                 });
                 return 'Typescript initializer done';
             },
@@ -136,6 +148,10 @@ async function main() {
 
                 promises.writeFile(".gitignore", gitignore);
                 promises.writeFile("jest.config.ts", jestconfig);
+
+                promises.writeFile("README.md", readme);
+                promises.writeFile("TECHDEBT.md", techdebt);
+                promises.writeFile("NOTES.md", notes);
 
                 return 'Source and test folders generated';
             },
