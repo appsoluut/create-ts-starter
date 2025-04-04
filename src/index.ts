@@ -82,9 +82,10 @@ async function updateValues(fileName: string, values: Map<String, any>) {
         let file = require(fname);
         file = Object.assign(file, Object.fromEntries(values));
         await promises.writeFile(fname, JSON.stringify(file, null, 2))
+        return true;
     } catch(err) {
         onCancel(err as string);
-        return;
+        return false;
     }
 }
 
@@ -109,7 +110,7 @@ async function main() {
             title: 'Setting up npm package',
             task: async (message) => {
                 await myExec(`npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest ts-jest @types/jest`)
-                
+
                 await updateValues('./package.json', new Map<string, any>([
                     ['name', projectName],
                     ['type', "module"],
@@ -124,22 +125,22 @@ async function main() {
             task: async (message) => {
                 await myExec(`tsc --init`);
 
-                await stripComments('./tsconfig.json').then(() => {
-                    updateValues('./tsconfig.json', new Map<string, any>([
-                        ['include', ["src/**/*", "tests/**/*"]],
-                        ['compilerOptions', {
-                            "target": "es2016",
-                            "module": "commonjs",
-                            "esModuleInterop": true,
-                            "forceConsistentCasingInFileNames": true,
-                            "strict": true,
-                            "skipLibCheck": true,
-                            "baseUrl": ".",
-                            "paths": {
-                              "@/*": ["src/*"]
-                        }}],
-                    ]));
-                });
+                await stripComments('./tsconfig.json');
+                await updateValues('./tsconfig.json', new Map<string, any>([
+                    ['include', ["src/**/*", "tests/**/*"]],
+                    ['compilerOptions', {
+                        "target": "es2016",
+                        "module": "commonjs",
+                        "esModuleInterop": true,
+                        "forceConsistentCasingInFileNames": true,
+                        "strict": true,
+                        "skipLibCheck": true,
+                        "baseUrl": ".",
+                        "paths": {
+                            "@/*": ["src/*"]
+                        }
+                    }]
+                ]));
 
                 return 'Typescript initializer done';
             },
