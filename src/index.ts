@@ -76,7 +76,7 @@ async function stripComments(fileName: string) {
     }
 }
 
-async function updateValues(fileName: string, values: Map<String, any>) {
+async function updateValues(fileName: string, values: Map<string, any>) {
     const fname = process.cwd() + '/' + fileName;
     try {
         let file = require(fname);
