@@ -76,12 +76,12 @@ async function stripComments(fileName: string) {
     }
 }
 
-function updateValues(fileName: string, values: Map<String, any>) {
+async function updateValues(fileName: string, values: Map<String, any>) {
     const fname = process.cwd() + '/' + fileName;
     try {
         let file = require(fname);
         file = Object.assign(file, Object.fromEntries(values));
-        promises.writeFile(fname, JSON.stringify(file, null, 2))
+        await promises.writeFile(fname, JSON.stringify(file, null, 2))
     } catch(err) {
         onCancel(err as string);
         return;
@@ -108,22 +108,23 @@ async function main() {
         {
             title: 'Setting up npm package',
             task: async (message) => {
-                // Do installation here
                 await myExec(`npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest ts-jest @types/jest`)
-                updateValues('./package.json', new Map<string, any>([
+                
+                await updateValues('./package.json', new Map<string, any>([
                     ['name', projectName],
                     ['type', "module"],
                     ['scripts', {test: "jest", lint: "eslint . --ext .ts,.tsx --fix"}]
                 ]));
+
                 return `Installed via npm`;
             },
         },
         {
             title: 'Setting up typescript',
             task: async (message) => {
-                // Do installation here
                 await myExec(`tsc --init`);
-                stripComments('./tsconfig.json').then(() => {
+
+                await stripComments('./tsconfig.json').then(() => {
                     updateValues('./tsconfig.json', new Map<string, any>([
                         ['include', ["src/**/*", "tests/**/*"]],
                         ['compilerOptions', {
@@ -139,13 +140,13 @@ async function main() {
                         }}],
                     ]));
                 });
+
                 return 'Typescript initializer done';
             },
         },
         {
             title: 'Setting up linter',
             task: async (message) => {
-                // Do installation here
                 await myExec(`npm install --save-dev eslint typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript`);
                 
                 await promises.writeFile('eslint.config.ts', eslintConfig);
@@ -168,7 +169,7 @@ async function main() {
             task: async () => {
               await myExec(`git init --initial-branch=main`);
               
-              promises.writeFile(".gitignore", gitIgnore);
+              await promises.writeFile(".gitignore", gitIgnore);
 
               return 'Git initialized with main branch';
             },
@@ -176,19 +177,17 @@ async function main() {
         {
             title: 'Creating src and test folders',
             task: async (message) => {
-                // Do installation here
-                promises.mkdir("src").then(() => {
-                    promises.writeFile("src/index.ts", sum);
-                });
-                promises.mkdir("tests").then(() => {
-                    promises.writeFile("tests/index.test.ts", sumTest);
-                });
+                await promises.mkdir("src");
+                await promises.writeFile("src/index.ts", sum);
 
-                promises.writeFile("jest.config.ts", jestConfig);
+                await promises.mkdir("tests");
+                await promises.writeFile("tests/index.test.ts", sumTest);
 
-                promises.writeFile("README.md", readme);
-                promises.writeFile("TECHDEBT.md", techdebt);
-                promises.writeFile("NOTES.md", notes);
+                await promises.writeFile("jest.config.ts", jestConfig);
+
+                await promises.writeFile("README.md", readme);
+                await promises.writeFile("TECHDEBT.md", techdebt);
+                await promises.writeFile("NOTES.md", notes);
 
                 return 'Source and test folders generated';
             },
