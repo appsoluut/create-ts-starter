@@ -3,35 +3,30 @@
 import { intro, text, tasks, outro, isCancel, cancel, log } from '@clack/prompts';
 import { exec, execSync } from 'node:child_process';
 import { promises } from 'fs';
+import { eslintConfig, prettierConfig } from './config/linting';
+import { vsCodeSettings } from './config/vsCode';
+import { gitIgnore } from './config/git';
+import { jestConfig } from './config/jest';
 
 const sum = `export function sum(a: number, b: number): number {
-    return a + b;
+  return a + b;
 }
 `
 
-const sumTest = `import { sum } from '../src/index'
+const sumTest = `import { sum } from '@/index';
 
 describe('sum', () => {
-    it("sum of 1 + 2 should return 3", () => {
-        // arrange
-        const expectedOutput = 3;
-        
-        // act
-        let result = sum(1, 2);
+  it('sum of 1 + 2 should return 3', () => {
+    // arrange
+    const expectedOutput = 3;
 
-        // assert
-        expect(result).toBe(expectedOutput);
-    })
-});`
+    // act
+    let result = sum(1, 2);
 
-const gitignore = `node_modules/
-package-lock.json
-`
-
-const jestconfig =`module.exports = {
-    preset: 'ts-jest',
-    testEnvironment: 'node',
-};
+    // assert
+    expect(result).toBe(expectedOutput);
+  });
+});
 `
 
 const notes = `✅ DONE
@@ -117,7 +112,8 @@ async function main() {
                 await myExec(`npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest ts-jest @types/jest`)
                 updateValues('./package.json', new Map<string, any>([
                     ['name', projectName],
-                    ['scripts', {test: "jest"}]
+                    ['type', "module"],
+                    ['scripts', {test: "jest", lint: "eslint . --ext .ts,.tsx --fix"}]
                 ]));
                 return `Installed via npm`;
             },
@@ -130,9 +126,51 @@ async function main() {
                 stripComments('./tsconfig.json').then(() => {
                     updateValues('./tsconfig.json', new Map<string, any>([
                         ['include', ["src/**/*", "tests/**/*"]],
+                        ['compilerOptions', {
+                            "target": "es2016",
+                            "module": "commonjs",
+                            "esModuleInterop": true,
+                            "forceConsistentCasingInFileNames": true,
+                            "strict": true,
+                            "skipLibCheck": true,
+                            "baseUrl": ".",
+                            "paths": {
+                              "@/*": ["src/*"]
+                        }}],
                     ]));
                 });
                 return 'Typescript initializer done';
+            },
+        },
+        {
+            title: 'Setting up linter',
+            task: async (message) => {
+                // Do installation here
+                await myExec(`npm install --save-dev eslint typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript`);
+                
+                await promises.writeFile('eslint.config.ts', eslintConfig);
+                await promises.writeFile('.prettierrc', prettierConfig);
+
+                return 'Linter initializer done';
+            },
+        },
+        {
+            title: 'Configuring vscode settings for project',
+            task: async (message) => {      
+                await promises.mkdir('.vscode');
+                await promises.writeFile('.vscode/settings.json', vsCodeSettings);
+
+                return 'Configuring vscode settings for project done';
+            },
+        },
+        {
+            title: 'Initializing git repository',
+            task: async () => {
+              await myExec(`git init --initial-branch=main`);
+              
+              promises.writeFile(".gitignore", gitIgnore);
+
+              return 'Git initialized with main branch';
             },
         },
         {
@@ -146,8 +184,7 @@ async function main() {
                     promises.writeFile("tests/index.test.ts", sumTest);
                 });
 
-                promises.writeFile(".gitignore", gitignore);
-                promises.writeFile("jest.config.ts", jestconfig);
+                promises.writeFile("jest.config.ts", jestConfig);
 
                 promises.writeFile("README.md", readme);
                 promises.writeFile("TECHDEBT.md", techdebt);
