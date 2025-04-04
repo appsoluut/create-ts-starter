@@ -148,7 +148,7 @@ async function main() {
                 // Do installation here
                 await myExec(`npm install --save-dev eslint typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript`);
                 
-                await promises.writeFile('eslint.config.js', eslintConfig);
+                await promises.writeFile('eslint.config.ts', eslintConfig);
                 await promises.writeFile('.prettierrc', prettierConfig);
 
                 return 'Linter initializer done';
