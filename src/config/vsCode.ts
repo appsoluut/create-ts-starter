@@ -3,7 +3,7 @@ export const vsCodeSettings = `{
       "source.fixAll.eslint": "explicit"
     },
     "editor.formatOnSave": true,
-    "eslint.validate": ["typescript"]
+    "eslint.validate": ["typescript"],
     "typescript.preferences.importModuleSpecifier": "non-relative"
 }
 `;

@@ -156,10 +156,7 @@ async function main() {
         },
         {
             title: 'Configuring vscode settings for project',
-            task: async (message) => {
-                // Do installation here
-                await myExec(`npm install --save-dev eslint typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier`);
-                
+            task: async (message) => {      
                 await promises.mkdir('.vscode');
                 await promises.writeFile('.vscode/settings.json', vsCodeSettings);
 
