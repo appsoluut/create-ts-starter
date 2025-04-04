@@ -7,6 +7,7 @@ import { eslintConfig, prettierConfig } from './config/linting';
 import { vsCodeSettings } from './config/vsCode';
 import { gitIgnore } from './config/git';
 import { jestConfig } from './config/jest';
+import path from 'node:path';
 
 const sum = `export function sum(a: number, b: number): number {
   return a + b;
@@ -77,7 +78,7 @@ async function stripComments(fileName: string) {
 }
 
 async function updateValues(fileName: string, values: Map<string, any>) {
-    const fname = process.cwd() + '/' + fileName;
+    const fname = path.join(process.cwd(), fileName);
     try {
         let file = require(fname);
         file = Object.assign(file, Object.fromEntries(values));
