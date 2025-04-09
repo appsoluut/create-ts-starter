@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { intro, text, tasks, outro, isCancel, cancel, log } from '@clack/prompts';
+import { intro, text, tasks, outro, isCancel, cancel, log, note } from '@clack/prompts';
 import { exec, execSync } from 'node:child_process';
 import { promises } from 'fs';
 import { eslintConfig, prettierConfig } from './config/linting';
@@ -16,8 +16,8 @@ const sum = `export function sum(a: number, b: number): number {
 
 const sumTest = `import { sum } from '@/index';
 
-describe('sum', () => {
-  it('sum of 1 + 2 should return 3', () => {
+describe('Sum should be', () => {
+  test('total of 3 when adding 1 and 2', () => {
     // arrange
     const expectedOutput = 3;
 
@@ -93,7 +93,7 @@ async function updateValues(fileName: string, values: Map<string, any>) {
 async function main() {
     intro(`Set up Typescript project`);
 
-    const projectName = await text({
+    let projectName = await text({
         message: 'What is your project name?',
         placeholder: 'project-name',
         initialValue: 'kata-ts',
@@ -106,7 +106,38 @@ async function main() {
         onCancel('User cancelled.')
     }
 
+    let folderName = await text({
+        message: 'In which sub-folder should this project be placed?',
+        placeholder: 'Lesson XX',
+        initialValue: 'Lesson 0X',
+        validate(value) {
+            if (value.length === 0) return `Value is required!`;
+        },
+    });
+
+    if (isCancel(folderName)) {
+        onCancel('User cancelled.')
+    }
+
+    folderName = folderName as string
+
     await tasks([
+        {
+            title: 'Setting up Git repository',
+            task: async (message) => {
+                await myExec(`git clone https://github.com/sw-craftsmanship-dojo/ns_white_crane_white_belt.git .`)
+
+                await promises.mkdir(`./${folderName}`);
+                await promises.mkdir(`./${folderName}/code`);
+                await promises.mkdir(`./${folderName}/theory`);
+
+                process.chdir(`./${folderName}/code`)
+
+                await promises.writeFile(".gitignore", gitIgnore);
+
+                return `Installed repository`;
+            },
+        },
         {
             title: 'Setting up npm package',
             task: async (message) => {
@@ -167,16 +198,6 @@ async function main() {
             },
         },
         {
-            title: 'Initializing git repository',
-            task: async () => {
-              await myExec(`git init --initial-branch=main`);
-              
-              await promises.writeFile(".gitignore", gitIgnore);
-
-              return 'Git initialized with main branch';
-            },
-        },
-        {
             title: 'Creating src and test folders',
             task: async (message) => {
                 await promises.mkdir("src");
@@ -195,6 +216,11 @@ async function main() {
             },
         }
     ]);
+
+    process.chdir(`../../`);
+    const installedPath = path.join(process.cwd(), folderName, "code");
+
+    note(`Finished setting up the project for you in:\n'${installedPath}'.\n\nChange into this folder and run 'code .' to open\nVisual Studio Code and start your kata!`, `Info`);
 
     outro(`You're all set!`);
 }

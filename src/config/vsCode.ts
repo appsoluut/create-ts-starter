@@ -4,6 +4,7 @@ export const vsCodeSettings = `{
     },
     "editor.formatOnSave": true,
     "eslint.validate": ["typescript"],
+    "files.autoSave": "onFocusChange",
     "typescript.preferences.importModuleSpecifier": "non-relative"
 }
 `;
