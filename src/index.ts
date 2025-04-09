@@ -127,11 +127,12 @@ async function main() {
             task: async (message) => {
                 await myExec(`git clone https://github.com/sw-craftsmanship-dojo/ns_white_crane_white_belt.git .`)
 
-                await promises.mkdir(`./${folderName}`);
-                await promises.mkdir(`./${folderName}/code`);
-                await promises.mkdir(`./${folderName}/theory`);
+                
+                await promises.mkdir(path.join('.', folderName));
+                await promises.mkdir(path.join('.', folderName, 'code'));
+                await promises.mkdir(path.join('.', folderName, 'theory'));
 
-                process.chdir(`./${folderName}/code`)
+                process.chdir(path.join(folderName, 'code'))
 
                 await promises.writeFile(".gitignore", gitIgnore);
 
