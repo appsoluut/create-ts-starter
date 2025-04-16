@@ -126,7 +126,6 @@ async function main() {
             title: 'Setting up Git repository',
             task: async (message) => {
                 await myExec(`git clone https://github.com/sw-craftsmanship-dojo/ns_white_crane_white_belt.git .`)
-
                 
                 await promises.mkdir(path.join('.', folderName));
                 await promises.mkdir(path.join('.', folderName, 'code'));
@@ -142,7 +141,7 @@ async function main() {
         {
             title: 'Setting up npm package',
             task: async (message) => {
-                await myExec(`npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest ts-jest @types/jest`)
+                await myExec(`npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest jest-each ts-jest @types/jest`)
 
                 await updateValues('./package.json', new Map<string, any>([
                     ['name', projectName],
