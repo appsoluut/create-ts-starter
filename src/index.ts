@@ -32,13 +32,14 @@ function myExecImpl(callback: (output: string) => void, cmd: string) {
 }
 
 async function stripComments(fileName: string) {
-  const fname = process.cwd() + '/' + fileName;
-  const re = /\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|^\/\/.*/g;
-
   try {
-    let data = await promises.readFile(fileName, 'utf8');
-    let contents = data.replace(re, '').replace(/\s*\r?\n/g, '\n');
-    await promises.writeFile(fname, contents);
+    const saveFileName = path.relative(process.cwd(), fileName);
+    const re = /\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|^\/\/.*/g;
+
+    const data = await promises.readFile(path.resolve(fileName), 'utf8');
+    const contents = data.replace(re, '').replace(/\s*\r?\n/g, '\n');
+
+    await promises.writeFile(saveFileName, contents);
   } catch (err) {
     onCancel(err as string);
     return;
@@ -49,7 +50,7 @@ async function updateValues(fileName: string, values: Map<string, unknown>) {
   const fname = path.join(process.cwd(), fileName);
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let file = require(fname);
+    let file = require(`${fname}`);
     file = Object.assign(file, Object.fromEntries(values));
     await promises.writeFile(fname, JSON.stringify(file, null, 2));
     return true;
@@ -57,6 +58,13 @@ async function updateValues(fileName: string, values: Map<string, unknown>) {
     onCancel(err as string);
     return false;
   }
+}
+
+function getErrorMessage(error: unknown): string {
+  if (typeof error === 'object' && error && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return 'unknown error';
 }
 
 async function main() {
@@ -147,15 +155,21 @@ async function main() {
       {
         title: `Create new folder '${folderName}' and branch '${safeBranchName}'`,
         task: async () => {
-          await promises
-            .mkdir(`${folderName}`)
-            .catch((error) => console.error(`Failed to create folder: ${error.message}`)); // skip if exists
+          await promises.mkdir(`${folderName}`, { recursive: true }).catch((error: unknown) => {
+            console.error(`Failed to create folder: ${getErrorMessage(error)}`);
+          });
+
           await promises
             .mkdir(path.join(folderName, 'code'), { recursive: true })
-            .catch((error) => console.error(`Failed to create folder: ${error.message}`));
+            .catch((error: unknown) => {
+              console.error(`Failed to create folder: ${getErrorMessage(error)}`);
+            });
+
           await promises
             .mkdir(path.join(folderName, 'theory'), { recursive: true })
-            .catch((error) => console.error(`Failed to create folder: ${error.message}`));
+            .catch((error: unknown) => {
+              console.error(`Failed to create folder: ${getErrorMessage(error)}`);
+            });
 
           process.chdir(path.join(folderName, 'code'));
 
