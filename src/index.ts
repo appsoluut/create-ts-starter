@@ -2,299 +2,326 @@
 
 import { intro, text, tasks, outro, isCancel, cancel, log, note } from '@clack/prompts';
 import { existsSync } from 'node:fs';
-import { exec, execSync } from 'node:child_process';
+import { exec } from 'node:child_process';
 import { promises } from 'fs';
 import { eslintConfig, prettierConfig } from './config/linting';
 import { vsCodeSettings } from './config/vsCode';
 import { gitIgnore } from './config/git';
 import { jestConfig } from './config/jest';
 import path from 'node:path';
-import {notes, readme, sum, sumTest, techdebt} from "./config/initialCode";
+import { notes, readme, sum, sumTest, techdebt } from './config/initialCode';
 
 const CURRENT_DOJO = 'ns_white_crane_white_belt';
 
 function onCancel(message: string) {
-    cancel(message);
-    process.exit(0);
+  cancel(message);
+  process.exit(0);
 }
 
 function myExec(cmd: string): Promise<string> {
-    return new Promise((resolve) => {
-        myExecImpl(resolve, cmd)
-    });
+  return new Promise((resolve) => {
+    myExecImpl(resolve, cmd);
+  });
 }
 
 function myExecImpl(callback: (output: string) => void, cmd: string) {
-    exec(cmd, (error, stdout, stderr) => {
-        if (error) throw error;
-        callback(stdout || stderr);
-    })
+  exec(cmd, (error, stdout, stderr) => {
+    if (error) throw error;
+    callback(stdout || stderr);
+  });
 }
 
 async function stripComments(fileName: string) {
-    const fname = process.cwd() + '/' + fileName;
-    const re = /\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|^\/\/.*/g
+  const fname = process.cwd() + '/' + fileName;
+  const re = /\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|^\/\/.*/g;
 
-    try {
-        let data = await promises.readFile(fileName, "utf8");
-        let contents = data.replace(re, "").replace(/\s*\r?\n/g, "\n");
-        await promises.writeFile(fname, contents)
-    } catch(err) {
-        onCancel(err as string);
-        return;
-    }
+  try {
+    let data = await promises.readFile(fileName, 'utf8');
+    let contents = data.replace(re, '').replace(/\s*\r?\n/g, '\n');
+    await promises.writeFile(fname, contents);
+  } catch (err) {
+    onCancel(err as string);
+    return;
+  }
 }
 
-async function updateValues(fileName: string, values: Map<string, any>) {
-    const fname = path.join(process.cwd(), fileName);
-    try {
-        let file = require(fname);
-        file = Object.assign(file, Object.fromEntries(values));
-        await promises.writeFile(fname, JSON.stringify(file, null, 2))
-        return true;
-    } catch(err) {
-        onCancel(err as string);
-        return false;
-    }
+async function updateValues(fileName: string, values: Map<string, unknown>) {
+  const fname = path.join(process.cwd(), fileName);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    let file = require(fname);
+    file = Object.assign(file, Object.fromEntries(values));
+    await promises.writeFile(fname, JSON.stringify(file, null, 2));
+    return true;
+  } catch (err) {
+    onCancel(err as string);
+    return false;
+  }
 }
 
 async function main() {
-    intro(`Set up Typescript project`);
+  intro(`Set up Typescript project`);
 
-    const isDojoLessonAnswer = await text({
-        message: 'Is this part of the Dojo lessons for the white belt? (Y/n)',
-        placeholder: 'Y',
-        validate(value) {
-            return /^[YyNn]$/.test(value) ? undefined : 'Please enter Y or N';
+  const isDojoLessonAnswer = await text({
+    message: 'Is this part of the Dojo lessons for the white belt? (Y/n)',
+    placeholder: 'Y',
+    validate(value) {
+      return /^[YyNn]$/.test(value) ? undefined : 'Please enter Y or N';
+    },
+  });
+
+  if (isCancel(isDojoLessonAnswer)) onCancel('User cancelled.');
+
+  const isDojoLesson =
+    typeof isDojoLessonAnswer === 'string' && isDojoLessonAnswer.toLowerCase() === 'y';
+
+  let projectName = await text({
+    message: 'What is your project name?',
+    placeholder: 'project-name',
+    initialValue: 'kata-ts',
+    validate(value) {
+      if (value.length === 0) return `Value is required!`;
+    },
+  });
+
+  if (isCancel(projectName)) {
+    onCancel('User cancelled.');
+  }
+
+  if (typeof projectName !== 'string') {
+    return `Invalid project name!`;
+  }
+
+  const placeHolderFolderName = isDojoLesson ? 'Lesson XX' : projectName;
+  const initialFolderName = isDojoLesson ? 'Lesson 0X' : projectName;
+
+  let folderName = await text({
+    message: 'In which sub-folder should this project be placed?',
+    placeholder: placeHolderFolderName,
+    initialValue: initialFolderName,
+    validate(value) {
+      if (value.length === 0) return `Value is required!`;
+    },
+  });
+
+  if (isCancel(folderName)) {
+    onCancel('User cancelled.');
+  }
+
+  folderName = folderName as string;
+
+  const setupTasks = [];
+
+  if (isDojoLesson) {
+    const safeBranchName = folderName.replace(/\s+/g, '_');
+
+    setupTasks.push(
+      {
+        title: `Creating project folder '${CURRENT_DOJO}' if needed`,
+        task: async () => {
+          const dojoFolder = path.join('.', CURRENT_DOJO);
+
+          if (!existsSync(dojoFolder)) {
+            await promises.mkdir(dojoFolder);
+          } else {
+            log.info('Folder already exists, skipping creation');
+          }
+
+          process.chdir(path.join('.', CURRENT_DOJO));
         },
-    });
+      },
+      {
+        title: 'Clone Dojo repo or continue with existing repo',
+        task: async () => {
+          const gitFolderExists = existsSync(path.join('.', '.git'));
 
-    if (isCancel(isDojoLessonAnswer)) onCancel('User cancelled.');
+          if (!gitFolderExists) {
+            await myExec(`git clone git@github.com:sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`);
+          } else {
+            log.info('Git repo already present, skipping clone.');
+          }
 
-    const isDojoLesson = typeof isDojoLessonAnswer === 'string' && isDojoLessonAnswer.toLowerCase() === 'y';
-
-    let projectName = await text({
-        message: 'What is your project name?',
-        placeholder: 'project-name',
-        initialValue: 'kata-ts',
-        validate(value) {
-            if (value.length === 0) return `Value is required!`;
+          return 'Dojo repo ready';
         },
-    });
+      },
+      {
+        title: `Create new folder '${folderName}' and branch '${safeBranchName}'`,
+        task: async () => {
+          await promises
+            .mkdir(`${folderName}`)
+            .catch((error) => console.error(`Failed to create folder: ${error.message}`)); // skip if exists
+          await promises
+            .mkdir(path.join(folderName, 'code'), { recursive: true })
+            .catch((error) => console.error(`Failed to create folder: ${error.message}`));
+          await promises
+            .mkdir(path.join(folderName, 'theory'), { recursive: true })
+            .catch((error) => console.error(`Failed to create folder: ${error.message}`));
 
-    if (isCancel(projectName)) {
-        onCancel('User cancelled.')
-    }
+          process.chdir(path.join(folderName, 'code'));
 
-    if (typeof projectName !== 'string') {
-        return `Invalid project name!`;
-    }
+          // Ensure .gitignore is present
+          await promises.writeFile('.gitignore', gitIgnore);
 
-    const placeHolderFolderName = isDojoLesson ? 'Lesson XX' : projectName;
-    const initialFolderName = isDojoLesson ? 'Lesson 0X' : projectName;
+          // If inside git repo, create branch
+          const gitFolderExists = existsSync(path.join('../../.git'));
+          if (gitFolderExists) {
+            // make sure you're inside the repo (from a subfolder)
+            await myExec(`git checkout -b ${safeBranchName}`);
+          }
 
-    let folderName = await text({
-        message: 'In which sub-folder should this project be placed?',
-        placeholder: placeHolderFolderName,
-        initialValue: initialFolderName,
-        validate(value) {
-            if (value.length === 0) return `Value is required!`;
+          return `Switched to new branch: ${folderName}`;
         },
-    });
+      }
+    );
+  } else {
+    setupTasks.push(
+      {
+        title: 'Creating project folder',
+        task: async () => {
+          await promises.mkdir(path.join('.', folderName));
+          process.chdir(path.join('.', folderName));
+        },
+      },
+      {
+        title: 'Setting up Git repository',
+        task: async () => {
+          await myExec(`git init --initial-branch=main`);
+          await promises.writeFile('.gitignore', gitIgnore);
+          return `Initialized Git repository`;
+        },
+      }
+    );
+  }
 
-    if (isCancel(folderName)) {
-        onCancel('User cancelled.')
-    }
-
-    folderName = folderName as string
-
-    const setupTasks = [];
-
-    if (isDojoLesson) {
-        const safeBranchName = folderName.replace(/\s+/g, '_');
-
-        setupTasks.push(
-            {
-                title: `Creating project folder '${CURRENT_DOJO}' if needed`,
-                task: async () => {
-                    const dojoFolder = path.join('.', CURRENT_DOJO);
-
-                    if (!existsSync(dojoFolder)) {
-                        await promises.mkdir(dojoFolder);
-                    } else {
-                        log.info('Folder already exists, skipping creation');
-                    }
-
-                    process.chdir(path.join('.', CURRENT_DOJO));
-                },
-            },
-            {
-                title: 'Clone Dojo repo or continue with existing repo',
-                task: async () => {
-                    const gitFolderExists = existsSync(path.join('.', '.git'));
-
-                    if (!gitFolderExists) {
-                        await myExec(`git clone git@github.com:sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`);
-                    } else {
-                        log.info('Git repo already present, skipping clone.');
-                    }
-
-                    return 'Dojo repo ready';
-                },
-            },
-            {
-                title: `Create new folder '${folderName}' and branch '${safeBranchName}'`,
-                task: async () => {
-                    await promises.mkdir(folderName).catch(() => {}); // skip if exists
-                    await promises.mkdir(path.join(folderName, 'code')).catch(() => {});
-                    await promises.mkdir(path.join(folderName, 'theory')).catch(() => {});
-
-                    process.chdir(path.join(folderName, 'code'));
-
-                    // Ensure .gitignore is present
-                    await promises.writeFile('.gitignore', gitIgnore);
-
-                    // If inside git repo, create branch
-                    const gitFolderExists = existsSync(path.join('../../.git'));
-                    if (gitFolderExists) {
-                        // make sure you're inside the repo (from a subfolder)
-                        await myExec(`git checkout -b ${safeBranchName}`);
-                    }
-
-                    return `Switched to new branch: ${folderName}`;
-                },
-            }
+  await tasks([
+    ...setupTasks,
+    {
+      title: 'Setting up npm package',
+      task: async () => {
+        await myExec(
+          `npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest jest-each ts-jest @types/jest`
         );
-    } else {
-        setupTasks.push(
-            {
-                title: 'Creating project folder',
-                task: async () => {
-                    await promises.mkdir(path.join('.', folderName));
-                    process.chdir(path.join('.', folderName));
-                },
-            },
-            {
-                title: 'Setting up Git repository',
-                task: async () => {
-                    await myExec(`git init --initial-branch=main`);
-                    await promises.writeFile(".gitignore", gitIgnore);
-                    return `Initialized Git repository`;
-                },
-            }
+
+        await updateValues(
+          './package.json',
+          new Map<string, unknown>([
+            ['name', projectName],
+            ['type', 'module'],
+            ['scripts', { test: 'jest', lint: 'eslint . --ext .ts,.tsx --fix' }],
+          ])
         );
-    }
 
-    await tasks([
-        ...setupTasks,
-        {
-            title: 'Setting up npm package',
-            task: async (message) => {
-                await myExec(`npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest jest-each ts-jest @types/jest`)
+        await myExec(`npm install`);
 
-                await updateValues('./package.json', new Map<string, any>([
-                    ['name', projectName],
-                    ['type', "module"],
-                    ['scripts', {test: "jest", lint: "eslint . --ext .ts,.tsx --fix"}]
-                ]));
+        return `Installed via npm`;
+      },
+    },
+    {
+      title: 'Setting up typescript',
+      task: async () => {
+        await myExec(`tsc --init`);
 
-                return `Installed via npm`;
-            },
-        },
-        {
-            title: 'Setting up typescript',
-            task: async (message) => {
-                await myExec(`tsc --init`);
+        await stripComments('./tsconfig.json');
+        await updateValues(
+          './tsconfig.json',
+          new Map<string, unknown>([
+            ['include', ['src/**/*', 'tests/**/*']],
+            [
+              'compilerOptions',
+              {
+                target: 'es2016',
+                module: 'commonjs',
+                esModuleInterop: true,
+                forceConsistentCasingInFileNames: true,
+                strict: true,
+                skipLibCheck: true,
+                baseUrl: '.',
+                paths: {
+                  '@/*': ['src/*'],
+                },
+              },
+            ],
+          ])
+        );
+        return 'Typescript initializer done';
+      },
+    },
+    {
+      title: 'Setting up linter',
+      task: async () => {
+        await myExec(
+          `npm install --save-dev eslint typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript`
+        );
 
-                await stripComments('./tsconfig.json');
-                await updateValues('./tsconfig.json', new Map<string, any>([
-                    ['include', ["src/**/*", "tests/**/*"]],
-                    ['compilerOptions', {
-                        "target": "es2016",
-                        "module": "commonjs",
-                        "esModuleInterop": true,
-                        "forceConsistentCasingInFileNames": true,
-                        "strict": true,
-                        "skipLibCheck": true,
-                        "baseUrl": ".",
-                        "paths": {
-                            "@/*": ["src/*"]
-                        }
-                    }]
-                ]));
+        await promises.writeFile('eslint.config.js', eslintConfig);
+        await promises.writeFile('.prettierrc', prettierConfig);
 
-                return 'Typescript initializer done';
-            },
-        },
-        {
-            title: 'Setting up linter',
-            task: async (message) => {
-                await myExec(`npm install --save-dev eslint typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript`);
+        return 'Linter initializer done';
+      },
+    },
+    {
+      title: 'Configuring vscode settings for project',
+      task: async () => {
+        await promises.mkdir('.vscode');
+        await promises.writeFile('.vscode/settings.json', vsCodeSettings);
 
-                await promises.writeFile('eslint.config.ts', eslintConfig);
-                await promises.writeFile('.prettierrc', prettierConfig);
+        return 'Configuring vscode settings for project done';
+      },
+    },
+    {
+      title: 'Creating src and test folders',
+      task: async () => {
+        await promises.mkdir('src');
+        await promises.writeFile('src/index.ts', sum);
 
-                return 'Linter initializer done';
-            },
-        },
-        {
-            title: 'Configuring vscode settings for project',
-            task: async (message) => {
-                await promises.mkdir('.vscode');
-                await promises.writeFile('.vscode/settings.json', vsCodeSettings);
+        await promises.mkdir('tests');
+        await promises.writeFile('tests/index.test.ts', sumTest);
 
-                return 'Configuring vscode settings for project done';
-            },
-        },
-        {
-            title: 'Creating src and test folders',
-            task: async (message) => {
-                await promises.mkdir("src");
-                await promises.writeFile("src/index.ts", sum);
+        await promises.writeFile('jest.config.ts', jestConfig);
 
-                await promises.mkdir("tests");
-                await promises.writeFile("tests/index.test.ts", sumTest);
+        await promises.writeFile('README.md', readme);
+        await promises.writeFile('TECHDEBT.md', techdebt);
+        await promises.writeFile('NOTES.md', notes);
 
-                await promises.writeFile("jest.config.ts", jestConfig);
+        await myExec(`npm run test`);
 
-                await promises.writeFile("README.md", readme);
-                await promises.writeFile("TECHDEBT.md", techdebt);
-                await promises.writeFile("NOTES.md", notes);
-
-                return 'Source and test folders generated';
-            },
-        },
-        {
-            title: 'Create first git commit',
-            task: async (message) => {
-                if(isDojoLesson) {
-                    const lessonPath = path.resolve('../../', folderName);
-                    await myExec(`git add "${lessonPath}"`);
-                    await myExec(`git commit -m "Initial commit for ${folderName}"`);
-                } else {
-                    await myExec(`git add .`);
-                    await myExec(`git commit -m "Initial commit for ${projectName}"`);
-                }
-
-                return 'First git commit done';
-            },
+        return 'Source and test folders generated successfully. All tests on initial sourcecode passed.';
+      },
+    },
+    {
+      title: 'Create first git commit',
+      task: async () => {
+        if (isDojoLesson) {
+          const lessonPath = path.resolve('../../', folderName);
+          await myExec(`git add "${lessonPath}"`);
+          await myExec(`git commit -m "Initial commit for ${folderName}"`);
+        } else {
+          await myExec(`git add .`);
+          await myExec(`git commit -m "Initial commit for ${projectName}"`);
         }
-    ]);
 
-    let installedPath = '';
-    if (isDojoLesson) {
-        process.chdir(`../../`);
+        return 'First git commit done';
+      },
+    },
+  ]);
 
-        installedPath =  isDojoLesson ? path.join(process.cwd(), folderName, 'code') : path.join(process.cwd(), folderName);
-    } else {
-        process.chdir(`../`);
+  let installedPath = '';
+  if (isDojoLesson) {
+    process.chdir(`../../`);
 
-        installedPath =  isDojoLesson ? path.join(process.cwd(), folderName) : path.join(process.cwd(), folderName);
-    }
+    installedPath = path.join(process.cwd(), folderName, 'code');
+  } else {
+    process.chdir(`../`);
 
-    note(`Finished setting up the project for you in:\n'${installedPath}'.\n\nChange into this folder and run 'code .' to open\nVisual Studio Code and start your kata!`, `Info`);
+    installedPath = path.join(process.cwd(), folderName);
+  }
 
-    outro(`You're all set!`);
+  note(
+    `Finished setting up the project for you in:\n'${installedPath}'.\n\nChange into this folder and run 'code .' to open\nVisual Studio Code and start your kata!`,
+    `Info`
+  );
+
+  outro(`You're all set!`);
 }
 
 main().catch(console.error);
