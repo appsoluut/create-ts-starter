@@ -33,13 +33,14 @@ function myExecImpl(callback: (output: string) => void, cmd: string) {
 
 async function stripComments(fileName: string) {
   try {
-    const saveFileName = path.relative(process.cwd(), fileName);
+    const safeFileName = path.resolve(process.cwd(), fileName);
+    if (!safeFileName.startsWith(process.cwd())) throw new Error('Invalid file path');
     const re = /\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|^\/\/.*/g;
 
     const data = await promises.readFile(path.resolve(fileName), 'utf8');
     const contents = data.replace(re, '').replace(/\s*\r?\n/g, '\n');
 
-    await promises.writeFile(saveFileName, contents);
+    await promises.writeFile(safeFileName, contents);
   } catch (err) {
     onCancel(err as string);
     return;
@@ -49,10 +50,10 @@ async function stripComments(fileName: string) {
 async function updateValues(fileName: string, values: Map<string, unknown>) {
   const fname = path.join(process.cwd(), fileName);
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let file = require(`${fname}`);
-    file = Object.assign(file, Object.fromEntries(values));
-    await promises.writeFile(fname, JSON.stringify(file, null, 2));
+    const data = await promises.readFile(fname, 'utf8');
+    const file = JSON.parse(data);
+    const updated = Object.assign(file, Object.fromEntries(values));
+    await promises.writeFile(`${fname}`, JSON.stringify(updated, null, 2));
     return true;
   } catch (err) {
     onCancel(err as string);
