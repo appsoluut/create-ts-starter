@@ -180,8 +180,16 @@ async function main() {
         {
             title: 'Setting up linter',
             task: async (message) => {
-                await myExec(`npm install --save-dev eslint typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript`);
-                
+                let installCmd = 'npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript';
+                try {
+                    await myExec('tsc --version');
+                    // TypeScript is installed globally, do not add to installCmd
+                } catch {
+                    // Not installed globally, add typescript to installCmd
+                    installCmd += ' typescript';
+                }
+
+                await myExec(installCmd);
                 await promises.writeFile('eslint.config.ts', eslintConfig);
                 await promises.writeFile('.prettierrc', prettierConfig);
 
