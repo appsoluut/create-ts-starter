@@ -22,7 +22,7 @@ function myExec(cmd: string): Promise<string> {
   return new Promise((resolve, reject) => {
     myExecImpl((output, err) => {
       if (err != undefined) {
-        reject(err)
+        reject(err);
       } else {
         resolve(output);
       }
@@ -30,7 +30,7 @@ function myExec(cmd: string): Promise<string> {
   });
 }
 
-function myExecImpl(callback: (output: string, error: any) => void, cmd: string) {
+function myExecImpl(callback: (output: string, error: unknown) => void, cmd: string) {
   exec(cmd, (error, stdout, stderr) => {
     callback(stdout || stderr, error);
   });
@@ -150,12 +150,15 @@ async function main() {
           const gitFolderExists = existsSync(path.join('.', '.git'));
 
           if (!gitFolderExists) {
-            await myExec(`git clone git@github.com:sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`)
-              .catch(async () => {
-                // trying over https
-                log.warning("Cloning over SSH failed, trying HTTPS!");
-                await myExec(`git clone https://github.com/sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`);
-              });
+            await myExec(
+              `git clone git@github.com:sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`
+            ).catch(async () => {
+              // trying over https
+              log.warning('Cloning over SSH failed, trying HTTPS!');
+              await myExec(
+                `git clone https://github.com/sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`
+              );
+            });
           } else {
             log.info('Git repo already present, skipping clone.');
           }
@@ -246,45 +249,52 @@ async function main() {
       task: async () => {
         await myExec(`tsc --init`);
 
-                await stripComments('./tsconfig.json');
-                await updateValues('./tsconfig.json', new Map<string, any>([
-                    ['include', ["src/**/*", "tests/**/*"]],
-                    ['compilerOptions', {
-                        "target": "es2016",
-                        "module": "commonjs",
-                        "esModuleInterop": true,
-                        "forceConsistentCasingInFileNames": true,
-                        "strict": true,
-                        "skipLibCheck": true,
-                        "baseUrl": ".",
-                        "paths": {
-                            "@/*": ["src/*"]
-                        }
-                    }]
-                ]));
+        await stripComments('./tsconfig.json');
+        await updateValues(
+          './tsconfig.json',
+          new Map<string, unknown>([
+            ['include', ['src/**/*', 'tests/**/*']],
+            [
+              'compilerOptions',
+              {
+                target: 'es2016',
+                module: 'commonjs',
+                esModuleInterop: true,
+                forceConsistentCasingInFileNames: true,
+                strict: true,
+                skipLibCheck: true,
+                baseUrl: '.',
+                paths: {
+                  '@/*': ['src/*'],
+                },
+              },
+            ],
+          ])
+        );
 
-                return 'Typescript initializer done';
-            },
-        },
-        {
-            title: 'Checking TypeScript installation',
-            task: async (message) => {
-                try {
-                    await myExec('tsc --version');
-                    return 'TypeScript is already installed globally';
-                } catch {
-                    await myExec('npm install -g typescript');
-                    return 'TypeScript has been installed globally';
-                }
-            },
-        },
-        {
-            title: 'Setting up linter',
-            task: async (message) => {
-                const installCmd = 'npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript';
-                await myExec(installCmd);
-                await promises.writeFile('eslint.config.js', eslintConfig);
-                await promises.writeFile('.prettierrc', prettierConfig);
+        return 'Typescript initializer done';
+      },
+    },
+    {
+      title: 'Checking TypeScript installation',
+      task: async () => {
+        try {
+          await myExec('tsc --version');
+          return 'TypeScript is already installed globally';
+        } catch {
+          await myExec('npm install -g typescript');
+          return 'TypeScript has been installed globally';
+        }
+      },
+    },
+    {
+      title: 'Setting up linter',
+      task: async () => {
+        const installCmd =
+          'npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin prettier eslint-config-prettier eslint-plugin-prettier eslint-import-resolver-typescript';
+        await myExec(installCmd);
+        await promises.writeFile('eslint.config.js', eslintConfig);
+        await promises.writeFile('.prettierrc', prettierConfig);
 
         return 'Linter initializer done';
       },
