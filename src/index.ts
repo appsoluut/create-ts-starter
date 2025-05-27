@@ -19,15 +19,20 @@ function onCancel(message: string) {
 }
 
 function myExec(cmd: string): Promise<string> {
-  return new Promise((resolve) => {
-    myExecImpl(resolve, cmd);
+  return new Promise((resolve, reject) => {
+    myExecImpl((output, err) => {
+      if (err != undefined) {
+        reject(err) 
+      } else {
+        resolve(output);
+      }
+    }, cmd);
   });
 }
 
-function myExecImpl(callback: (output: string) => void, cmd: string) {
+function myExecImpl(callback: (output: string, error: any) => void, cmd: string) {
   exec(cmd, (error, stdout, stderr) => {
-    if (error) throw error;
-    callback(stdout || stderr);
+    callback(stdout || stderr, error);
   });
 }
 
@@ -145,7 +150,12 @@ async function main() {
           const gitFolderExists = existsSync(path.join('.', '.git'));
 
           if (!gitFolderExists) {
-            await myExec(`git clone git@github.com:sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`);
+            await myExec(`git clone git@github.com:sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`)
+              .catch(async () => {
+                // trying over https
+                log.warning("Cloning over SSH failed, trying HTTPS!");
+                await myExec(`git clone https://github.com/sw-craftsmanship-dojo/${CURRENT_DOJO}.git .`);
+              });
           } else {
             log.info('Git repo already present, skipping clone.');
           }
