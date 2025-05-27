@@ -1,6 +1,6 @@
 {
   "name": "@appsoluut/create-ts-starter",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "exports": {
     "./src": "./src/index.ts",
     "./src/config/*.ts": "./src/config/*.ts"
@@ -15,7 +15,26 @@
     "lint": "eslint . --ext .ts,.tsx --fix"
   },
   "keywords": [],
-  "author": "Paul Hameteman <paul@hameteman.com>",
+  "author": {
+    "name": "Paul Hameteman",
+    "email": "paul@hameteman.com",
+    "url": "https://hameteman.com/"
+  },
+  "contributors": [
+    {
+      "name": "Paul Hameteman",
+      "email": "paul@hameteman.com",
+      "url": "https://hameteman.com/"
+    },
+    {
+      "name": "Lieuwe Jansons",
+      "url": "https://github.com/LieuweJ"
+    },
+    {
+      "name": "Momen el Kamri",
+      "url": "https://github.com/momenelkamri"
+    }
+  ],
   "license": "ISC",
   "description": "Starter script for creating Typescript projects easily.",
   "repository": "github:appsoluut/create-ts-starter",
