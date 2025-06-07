@@ -224,7 +224,7 @@ async function main() {
   await tasks([
     ...setupTasks,
     {
-      title: 'Setting up npm package',
+      title: 'Installing packages via npm',
       task: async () => {
         await myExec(
           `npm init -init-version=0.0.1 -y && npm install ts-node && npm install --save-dev jest jest-each ts-jest @types/jest`
@@ -234,45 +234,25 @@ async function main() {
           './package.json',
           new Map<string, unknown>([
             ['name', projectName],
-            ['type', 'module'],
-            ['scripts', { test: 'jest', lint: 'eslint . --ext .ts,.tsx --fix' }],
-          ])
-        );
-
-        await myExec(`npm install`);
-
-        return `Installed via npm`;
-      },
-    },
-    {
-      title: 'Setting up typescript',
-      task: async () => {
-        await myExec(`tsc --init`);
-
-        await stripComments('./tsconfig.json');
-        await updateValues(
-          './tsconfig.json',
-          new Map<string, unknown>([
-            ['include', ['src/**/*', 'tests/**/*']],
+            ['type', 'commonjs'],
             [
-              'compilerOptions',
+              'scripts',
               {
-                target: 'es2016',
-                module: 'commonjs',
-                esModuleInterop: true,
-                forceConsistentCasingInFileNames: true,
-                strict: true,
-                skipLibCheck: true,
-                baseUrl: '.',
-                paths: {
-                  '@/*': ['src/*'],
-                },
+                test: 'jest',
+                lint: 'eslint . --ext .ts,.tsx --fix',
+                coverage: 'npx jest --coverage',
+                compile: 'npx tsc',
+                'update-kata': 'npx tsc && node dist/main.js',
+                kata: 'node dist/main.js',
+                help: `echo "Useful commands in this project:\n- \\\`npm run help\\\` - see useful commands.\n- \\\`npm run test\\\` - run all tests.\n- \\\`npm run coverage\\\` - run all tests and generate a coverage report.\n- \\\`npm run compile\\\` - compile the TypeScript code to JavaScript (output goes to /dist).\n- \\\`npm run kata\\\` - run the kata (executes main.js).\n- \\\`npm run update-kata\\\` - compile latest code and run the kata (executes main.js)."`,
               },
             ],
           ])
         );
 
-        return 'Typescript initializer done';
+        await myExec(`npm install`);
+
+        return `Packages have been installed successfully`;
       },
     },
     {
@@ -285,6 +265,38 @@ async function main() {
           await myExec('npm install -g typescript');
           return 'TypeScript has been installed globally';
         }
+      },
+    },
+    {
+      title: 'Setting up typescript',
+      task: async () => {
+        await myExec(`tsc --init`);
+
+        await stripComments('./tsconfig.json');
+        await updateValues(
+          './tsconfig.json',
+          new Map<string, unknown>([
+            ['include', ['src/**/*']],
+            [
+              'compilerOptions',
+              {
+                target: 'es2024',
+                module: 'commonjs',
+                moduleResolution: 'node',
+                esModuleInterop: true,
+                forceConsistentCasingInFileNames: true,
+                allowSyntheticDefaultImports: true,
+                strict: true,
+                skipLibCheck: true,
+                baseUrl: '.',
+                rootDir: 'src',
+                outDir: 'dist',
+              },
+            ],
+          ])
+        );
+
+        return 'Typescript setup done';
       },
     },
     {
@@ -312,7 +324,7 @@ async function main() {
       title: 'Creating src and test folders',
       task: async () => {
         await promises.mkdir('src');
-        await promises.writeFile('src/index.ts', sum);
+        await promises.writeFile('src/main.ts', sum);
 
         await promises.mkdir('tests');
         await promises.writeFile('tests/index.test.ts', sumTest);
@@ -323,9 +335,10 @@ async function main() {
         await promises.writeFile('TECHDEBT.md', techdebt);
         await promises.writeFile('NOTES.md', notes);
 
-        await myExec(`npm run test`);
+        await myExec(`npm run coverage`);
+        await myExec('npm run compile');
 
-        return 'Source and test folders generated successfully. All tests on initial sourcecode passed.';
+        return 'Source and test folders generated successfully. All tests on initial sourcecode passed. Project compiled successfully.';
       },
     },
     {
@@ -357,7 +370,13 @@ async function main() {
   }
 
   note(
-    `Finished setting up the project for you in:\n'${installedPath}'.\n\nChange into this folder and run 'code .' to open\nVisual Studio Code and start your kata!`,
+    `Finished setting up the project for you in:\n'${installedPath}'
+    
+Change into your new folder and:
+- Run \`npm run help\` to see useful commands regarding test coverage, compiling and code executing.
+- Run 'code .' to open Visual Studio Code and start your kata. 
+
+Enjoy and good luck!`,
     `Info`
   );
 
