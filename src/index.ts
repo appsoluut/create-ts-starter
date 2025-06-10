@@ -244,7 +244,7 @@ async function main() {
                 compile: 'npx tsc',
                 'update-kata': 'npx tsc && node dist/main.js',
                 kata: 'node dist/main.js',
-                help: `echo "Useful commands in this project:\n- npm run help - see useful commands.\n- 'npm run test' - run all tests.\n- 'npm run coverage' - run all tests and generate a coverage report.\n- 'npm run compile' - compile the TypeScript code to JavaScript (output goes to /dist).\n- 'npm run kata' - run the kata (executes main.js).\n- 'npm run update-kata' - compile latest code and run the kata (executes main.js)."`,
+                help: `echo "Useful commands in this project:\n- 'npm run help' - see useful commands.\n- 'npm run test' - run all tests.\n- 'npm run coverage' - run all tests and generate a coverage report.\n- 'npm run compile' - compile the TypeScript code to JavaScript (output goes to /dist).\n- 'npm run kata' - run the kata (executes main.js).\n- 'npm run update-kata' - compile latest code and run the kata (executes main.js)."`,
               },
             ],
           ])
