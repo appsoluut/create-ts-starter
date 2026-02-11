@@ -77,7 +77,7 @@ async function main() {
   intro(`Set up Typescript project`);
 
   const isDojoLessonAnswer = await text({
-    message: 'Is this part of the Dojo lessons for the yellow belt? (Y/n)',
+    message: 'Is this part of the Dojo lessons for the orange belt? (Y/n)',
     placeholder: 'Y',
     validate(value) {
       return /^[YyNn]$/.test(value) ? undefined : 'Please enter Y or N';
