@@ -11,7 +11,7 @@ import { jestConfig } from './config/jest';
 import path from 'node:path';
 import { notes, readme, sum, sumTest, techdebt } from './config/initialCode';
 
-const CURRENT_DOJO = 'ns_white_crane_yelllow_belt';
+const CURRENT_DOJO = 'ns_whitecrane_orange';
 
 function onCancel(message: string) {
   cancel(message);
@@ -77,7 +77,7 @@ async function main() {
   intro(`Set up Typescript project`);
 
   const isDojoLessonAnswer = await text({
-    message: 'Is this part of the Dojo lessons for the yellow belt? (Y/n)',
+    message: 'Is this part of the Dojo lessons for the orange belt? (Y/n)',
     placeholder: 'Y',
     validate(value) {
       return /^[YyNn]$/.test(value) ? undefined : 'Please enter Y or N';
