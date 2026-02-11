@@ -11,7 +11,7 @@ import { jestConfig } from './config/jest';
 import path from 'node:path';
 import { notes, readme, sum, sumTest, techdebt } from './config/initialCode';
 
-const CURRENT_DOJO = 'ns_white_crane_yelllow_belt';
+const CURRENT_DOJO = 'ns_whitecrane_orange';
 
 function onCancel(message: string) {
   cancel(message);
